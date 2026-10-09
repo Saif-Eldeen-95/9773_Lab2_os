@@ -27,11 +27,11 @@ is_malicious() {
 
     ext=".${fname##*.}"
     for e in "${flagged_ext[@]}"; do
-        [ "$ext" = "$e" ] && { echo "EXT MATCH: $ext"; return 0; }
+        [ "$ext" = "$e" ] && { echo "ext match: $ext"; return 0; }
     done
 
     for k in "${flagged_kw[@]}"; do
-        grep -qi "$k" "$1" 2>/dev/null && { echo "MATCH: $k in $1"; return 0; }
+        grep -qi "$k" "$1" 2>/dev/null && { echo "match: $k in $1"; return 0; }
     done
     return 1
 }
@@ -41,12 +41,12 @@ scan() {
         [ -f "$f" ] || continue
         if is_malicious "$f"; then
             name=$(basename "$f")
-            echo "$name is malicious and it is DELETED"
+            echo "$name is malicious and it is deleted"
             if cp "$f" "$malicious_dir/$name"; then
-    rm -f "$f"
-else
-    echo "Error: Failed to quarantine $name"
-fi
+               rm -f "$f"
+            else
+               echo "Error: Failed to quarantine $name"
+            fi
         fi
     done
 }

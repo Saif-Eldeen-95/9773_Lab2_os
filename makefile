@@ -1,6 +1,6 @@
 dir ?= monitored
 malicious_dir ?= quarantine
-interval ?= 5
+interval ?= 2
 
 all: antivirus
 
