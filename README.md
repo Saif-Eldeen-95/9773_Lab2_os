@@ -9,7 +9,7 @@ user review quarantined files to restore or delete them.
 
 ## Folder Hierarchy
 
-studentID-lab2/
+9773-lab2/
 ├── antivirusd.sh        # Antivirus daemon (Part 1)
 ├── restore.sh           # Interactive restore tool (Part 2)
 ├── antivirus-cron.sh    # Single-pass scanner for cron (Bonus 1)
