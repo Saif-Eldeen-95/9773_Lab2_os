@@ -1,6 +1,65 @@
-<html>
-<style>
-   div{min-height:1em;}
-</style>
-<body>#!/bin/bash<br/><br/>flagged_ext=(&quot;.exe&quot; &quot;.bat&quot; &quot;.vbs&quot; &quot;.scr&quot; &quot;.ps1&quot;)<br/>flagged_kw=(&quot;virus&quot; &quot;trojan&quot; &quot;malware&quot; &quot;worm&quot; &quot;ransomware&quot;)<br/>whitelist=&quot;whitelist.txt&quot;<br/><br/>if [ $# -ne 3 ]; then<br/>    echo &quot;Usage: $0 dir malicious_dir interval_secs&quot;<br/>    exit 1<br/>fi<br/><br/>dir=&quot;$1&quot;<br/>malicious_dir=&quot;$2&quot;<br/>interval_secs=&quot;$3&quot;<br/><br/>if [ ! -d &quot;$dir&quot; ]; then<br/>    echo &quot;Error: Source directory does not exist&quot;<br/>    exit 1<br/>fi<br/>mkdir -p &quot;$malicious_dir&quot; || exit 1<br/><br/>touch &quot;$whitelist&quot;<br/><br/>is_malicious() {<br/>    fname=$(basename &quot;$1&quot;)<br/>    grep -Fxq &quot;$fname&quot; &quot;$whitelist&quot; &amp;&amp; return 1<br/><br/>    ext=&quot;.${fname##*.}&quot;<br/>    for e in &quot;${flagged_ext[@]}&quot;; do<br/>        [ &quot;$ext&quot; = &quot;$e&quot; ] &amp;&amp; { echo &quot;EXT MATCH: $ext&quot;; return 0; }<br/>    done<br/><br/>    for k in &quot;${flagged_kw[@]}&quot;; do<br/>        grep -qi &quot;$k&quot; &quot;$1&quot; 2&gt;/dev/null &amp;&amp; { echo &quot;MATCH: $k in $1&quot;; return 0; }<br/>    done<br/>    return 1<br/>}<br/><br/>scan() {<br/>    for f in &quot;$dir&quot;/*; do<br/>        [ -f &quot;$f&quot; ] || continue<br/>        if is_malicious &quot;$f&quot;; then<br/>            name=$(basename &quot;$f&quot;)<br/>            echo &quot;$name is malicious and it is DELETED&quot;<br/>            if cp &quot;$f&quot; &quot;$malicious_dir/$name&quot;; then<br/>    rm -f &quot;$f&quot;<br/>else<br/>    echo &quot;Error: Failed to quarantine $name&quot;<br/>fi<br/>        fi<br/>    done<br/>}<br/><br/>if [ ! -f directory-info.last ]; then<br/>    scan<br/>    ls -l &quot;$dir&quot; &gt; directory-info.last<br/>fi<br/>while true; do<br/>        sleep &quot;$interval_secs&quot;<br/>        ls -l &quot;$dir&quot; &gt; directory-info.new<br/>        if ! cmp -s directory-info.last directory-info.new; then<br/>            scan<br/>            cp directory-info.new directory-info.last<br/>        fi<br/>    done</body>
-</html>
+#!/bin/bash
+
+flagged_ext=(".exe" ".bat" ".vbs" ".scr" ".ps1")
+flagged_kw=("virus" "trojan" "malware" "worm" "ransomware")
+whitelist="whitelist.txt"
+
+if [ $# -ne 3 ]; then
+    echo "Usage: $0 dir malicious_dir interval_secs"
+    exit 1
+fi
+
+dir="$1"
+malicious_dir="$2"
+interval_secs="$3"
+
+if [ ! -d "$dir" ]; then
+    echo "Error: Source directory does not exist"
+    exit 1
+fi
+mkdir -p "$malicious_dir" || exit 1
+
+touch "$whitelist"
+
+is_malicious() {
+    fname=$(basename "$1")
+    grep -Fxq "$fname" "$whitelist" && return 1
+
+    ext=".${fname##*.}"
+    for e in "${flagged_ext[@]}"; do
+        [ "$ext" = "$e" ] && { echo "EXT MATCH: $ext"; return 0; }
+    done
+
+    for k in "${flagged_kw[@]}"; do
+        grep -qi "$k" "$1" 2>/dev/null && { echo "MATCH: $k in $1"; return 0; }
+    done
+    return 1
+}
+
+scan() {
+    for f in "$dir"/*; do
+        [ -f "$f" ] || continue
+        if is_malicious "$f"; then
+            name=$(basename "$f")
+            echo "$name is malicious and it is DELETED"
+            if cp "$f" "$malicious_dir/$name"; then
+    rm -f "$f"
+else
+    echo "Error: Failed to quarantine $name"
+fi
+        fi
+    done
+}
+
+if [ ! -f directory-info.last ]; then
+    scan
+    ls -l "$dir" > directory-info.last
+fi
+while true; do
+        sleep "$interval_secs"
+        ls -l "$dir" > directory-info.new
+        if ! cmp -s directory-info.last directory-info.new; then
+            scan
+            cp directory-info.new directory-info.last
+        fi
+done

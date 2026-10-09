@@ -1,6 +1,59 @@
-<html>
-<style>
-   div{min-height:1em;}
-</style>
-<body>#!/bin/bash<br/><br/>WHITELIST=&quot;whitelist.txt&quot;<br/><br/>if [ $# -ne 2 ]; then<br/>    echo &quot;Usage: $0 dir malicious_dir&quot;<br/>    exit 1<br/>fi<br/><br/>DIR=&quot;$1&quot;<br/>MALICIOUS_DIR=&quot;$2&quot;<br/>touch &quot;$WHITELIST&quot;<br/><br/>while true; do<br/>    files=(&quot;$MALICIOUS_DIR&quot;/*)<br/>    if [ ! -e &quot;${files[0]}&quot; ]; then<br/>        echo &quot;No malicious files to review.&quot;<br/>        exit 0<br/>    fi<br/><br/>    echo &quot;&quot;<br/>    echo &quot;Quarantined files:&quot;<br/>    i=1<br/>    for f in &quot;${files[@]}&quot;; do<br/>        echo &quot;  $i) $(basename &quot;$f&quot;)&quot;<br/>        i=$((i+1))<br/>    done<br/><br/>    read -p &quot;Pick a number (0 to quit): &quot; choice<br/>    [ &quot;$choice&quot; = &quot;0&quot; ] &amp;&amp; exit 0<br/><br/>    if ! [[ &quot;$choice&quot; =~ ^[0-9]+$ ]] || [ &quot;$choice&quot; -lt 1 ] || [ &quot;$choice&quot; -gt ${#files[@]} ]; then<br/>        echo &quot;Invalid choice.&quot;<br/>        continue<br/>    fi<br/><br/>    selected=&quot;${files[$((choice-1))]}&quot;<br/>    name=$(basename &quot;$selected&quot;)<br/><br/>    echo &quot;1) Restore  2) Delete  3) Skip&quot;<br/>    read -p &quot;Choose: &quot; action<br/><br/>    case &quot;$action&quot; in<br/>        1)<br/>            mv &quot;$selected&quot; &quot;$DIR/$name&quot;<br/>            grep -Fxq &quot;$name&quot; &quot;$WHITELIST&quot; || echo &quot;$name&quot; &gt;&gt; &quot;$WHITELIST&quot;<br/>            echo &quot;Restored $name to $DIR.&quot;<br/>            ;;<br/>        2)<br/>            rm -f &quot;$selected&quot;<br/>            echo &quot;$name permanently deleted.&quot;<br/>            ;;<br/>        3)<br/>            ;;<br/>        *)<br/>            echo &quot;Invalid option.&quot;<br/>            ;;<br/>    esac<br/>done</body>
-</html>
+#!/bin/bash
+
+whitelist="whitelist.txt"
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 dir malicious_dir"
+    exit 1
+fi
+
+dir="$1"
+malicious_dir="$2"
+touch "$whitelist"
+
+while true; do
+    files=("$malicious_dir"/*)
+    if [ ! -e "${files[0]}" ]; then
+        echo "No malicious files to review."
+        exit 0
+    fi
+
+    echo ""
+    echo "Quarantined files:"
+    i=1
+    for f in "${files[@]}"; do
+        echo "  $i) $(basename "$f")"
+        i=$((i+1))
+    done
+
+    read -p "Pick a number (0 to quit): " choice
+    [ "$choice" = "0" ] && exit 0
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#files[@]} ]; then
+        echo "Invalid choice."
+        continue
+    fi
+
+    selected="${files[$((choice-1))]}"
+    name=$(basename "$selected")
+
+    echo "1) Restore  2) Delete  3) Skip"
+    read -p "Choose: " action
+
+    case "$action" in
+        1)
+            mv "$selected" "$dir/$name"
+            grep -Fxq "$name" "$whitelist" || echo "$name" >> "$whitelist"
+            echo "Restored $name to $dir."
+            ;;
+        2)
+            rm -f "$selected"
+            echo "$name permanently deleted."
+            ;;
+        3)
+            ;;
+        *)
+            echo "Invalid option."
+            ;;
+    esac
+done
